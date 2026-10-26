@@ -65,6 +65,13 @@
       justify-content: center;
     }
 
+    /* ==== PROPORSI LAYAR 40% : 60% ====
+       Atas  : 0.8  (≈40%)
+       Bawah : 1.2  (≈60%)  → layar upload lebih tinggi, batas naik ke atas
+       Kalau diubah, SPLIT_TOP_RATIO di JS juga harus diubah! */
+    .screen-live   { flex: 0.8 1 0; }
+    .screen-upload { flex: 1.2 1 0; }
+
     .screen video {
       width: 100%; height: 100%;
       object-fit: cover;
@@ -485,8 +492,8 @@
 <div class="app">
   <div class="phone-frame">
 
-    <!-- ===== TOP SCREEN: LIVE ===== -->
-    <div class="screen">
+    <!-- ===== TOP SCREEN: LIVE (40%) ===== -->
+    <div class="screen screen-live">
       <span class="badge live">
         <span class="dot"></span>
         LIVE
@@ -503,8 +510,8 @@
 
     <div class="divider"></div>
 
-    <!-- ===== BOTTOM SCREEN: UPLOAD ===== -->
-    <div class="screen">
+    <!-- ===== BOTTOM SCREEN: UPLOAD (60%, lebih tinggi) ===== -->
+    <div class="screen screen-upload">
       <span class="badge upload">
         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
           <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
@@ -667,6 +674,14 @@ const QUALITY_PRESETS = {
 const QUALITY_ORDER = ['480', '720', '1080'];
 const SEEK_STEP = 5;
 
+/* Proporsi layar ATAS pada hasil rekaman.
+   HARUS SAMA dengan CSS:
+     .screen-live   { flex: 0.8 1 0; }
+     .screen-upload { flex: 1.2 1 0; }
+   → 0.8 / (0.8 + 1.2) = 0.40
+   Kalau nilai CSS diubah, ubah angka ini juga. */
+const SPLIT_TOP_RATIO = 0.40;
+
 /* ============================================================
    STATE
    ============================================================ */
@@ -761,13 +776,23 @@ function drawCover(video, dx, dy, dw, dh) {
 function startDrawLoop() {
   if (state.drawRAF) return;
   const tick = () => {
-    const W = canvas.width, H = canvas.height, halfH = Math.floor(H / 2);
+    const W = canvas.width, H = canvas.height;
+    /* Garis pemisah mengikuti proporsi layar 40/60 */
+    const splitY = Math.round(H * SPLIT_TOP_RATIO);
+
     ctx.fillStyle = '#000';
     ctx.fillRect(0, 0, W, H);
-    drawCover(liveVideo,   0, 0,     W, halfH);
-    drawCover(uploadVideo, 0, halfH, W, H - halfH);
+
+    /* Layar atas: LIVE (40%) */
+    drawCover(liveVideo,   0, 0,      W, splitY);
+
+    /* Layar bawah: UPLOAD (60%, lebih tinggi) */
+    drawCover(uploadVideo, 0, splitY, W, H - splitY);
+
+    /* Garis pemisah */
     ctx.fillStyle = 'rgba(255,255,255,0.5)';
-    ctx.fillRect(0, halfH - 1, W, 2);
+    ctx.fillRect(0, splitY - 1, W, 2);
+
     state.drawRAF = requestAnimationFrame(tick);
   };
   tick();
@@ -1165,7 +1190,7 @@ window.addEventListener('beforeunload', () => {
    ============================================================ */
 applyQuality('720');
 updatePlayPauseIcon();
-console.log('%c📱 Split Screen Recorder — Modern UI', 'color:#6366f1;font-weight:bold;font-size:14px');
+console.log('%c📱 Split Screen Recorder — Modern UI (40/60)', 'color:#6366f1;font-weight:bold;font-size:14px');
 </script>
 
 </body>
